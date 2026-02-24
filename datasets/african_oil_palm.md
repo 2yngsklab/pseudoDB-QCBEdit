@@ -1,15 +1,15 @@
 ## African oil palm Data download
-1. Create the required directories  
-    a. If you are working with African oil palm data, create a directory named "palm" in your home directory.    
+1. Create the default working directory and its sub-directories.      
+    a. Create a directory named "palm" as your default working directory.    
  	```   
     mkdir palm
  	```   
-    b. In the "palm" directory, create two sub-directories, "data" and "module" (see Fig. 1).    
+    b. In the "palm" directory, create a sub-directory, "data" (see Fig. 1).    
  	```   
     cd palm
    	```
    	```    
-    mkdir data module
+    mkdir data
     ```   
     c. Go to the "data" directory and create the three sub-directories: "fastq", "ref", and "db" (see Fig. 1).    
  	```   
