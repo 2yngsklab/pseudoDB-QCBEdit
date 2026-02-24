@@ -1,15 +1,15 @@
 ## Rice data download
-1. Create the required directories  
-    a. If you are working with rice data, create a directory named "rice" in your home directory.    
+1. Create the **default** working directory and its sub-directories.      
+    a. Create a directory named "rice" as your default working directory..    
  	```   
     mkdir rice
  	```   
-    b. In the "rice" directory, create two sub-directories, "data" and "module" (see Fig. 1).    
+    b. In the "rice" directory, create a sub-directory, "data" (see Fig. 1).    
   	```   
    cd rice    
  	```
  	```
-    mkdir data module
+    mkdir data 
    	```   
    
     c. Go to the "data" directory and create the three sub-directories: "fastq", "ref", and "db" (see Fig. 1).    
