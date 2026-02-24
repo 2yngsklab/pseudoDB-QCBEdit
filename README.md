@@ -1,4 +1,4 @@
-# A Reproducible Genetic Variant Calling Workflow Across Multiple Species    
+# A Reproducible Genetic Variant Calling Workflow Across Diverse Species    
 ### Overview
 This repository provides a comprehensive workflow, including configuration files and processed outputs, for genetic variant discovery across diverse species. The pipeline implements a standardized, modular, and fully reproducible framework to transform raw Next-Generation Sequencing (NGS) reads into high-quality variant datasets (VCFs). This project aims to advance scientific research by ensuring computational reproducibility, enabling performance benchmarking, and supporting open data sharing.
 
