@@ -111,12 +111,12 @@ We have provided three example use cases based on the human dataset to guide you
     ```  
     python pipeline3.py human GRCh38_full_analysis_set_plus_decoy_hla.fa 16 dbSNP list_human      
     ```
-     	Note: Once the process is complete, you can find your output VCF files in the **variants/** directory.   
+  Note: Once the process is complete, you can find your output VCF files in the **variants/** directory.   
 - ##### Case 3: Variant Calling with a Pseudo-Database     
     ```  
     python pipeline3.py human GRCh38_full_analysis_set_plus_decoy_hla.fa 16 pseudoDB list_human       
     ```  
-    Note: Once the process is complete, you can find your output VCF files in the **variants/** directory.    
+  Note: Once the process is complete, you can find your output VCF files in the **variants/** directory.    
 
 
 
