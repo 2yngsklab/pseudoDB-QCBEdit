@@ -1,15 +1,15 @@
 ## Stevia data download
-1. Create the required directories  
-    a. If you are working with Stevia  data, create a directory named "stevia" in your home directory.    
+1. Create the **default** working directory and its sub-directories  
+    a. Create a directory named "stevia" as your default working directory.    
  	```   
     mkdir stevia
  	```   
-    b. In the "stevia" directory, create two sub-directories, "data" and "module" (see Fig. 1).    
+    b. In the "stevia" directory, create a sub-directory, "data" (see Fig. 1).    
  	```   
     cd stevia
    	```
    	```    
-    mkdir data module
+    mkdir data
     ```   
     c. Go to the "data" directory and create the three sub-directories: "fastq", "ref", and "db" (see Fig. 1).    
  	```   
