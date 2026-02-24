@@ -1,15 +1,15 @@
 ## Cattle data download
-1. Create the required directories  
-    a. If you are working with cattle data, create a directory named "cattle" in your home directory.    
+1. Create the **default** working directory and its sub-directories.      
+    a. Create a directory named "cattle" as your default working directory.    
  	```   
     mkdir cattle
  	```   
-    b. In the "cattle" directory, create two sub-directories, "data" and "module" (see Fig. 1).    
+    b. In the "cattle" directory, create a sub-directory, "data" (see Fig. 1).    
  	```   
     cd cattle
    	```
    	```      
-    mkdir data module
+    mkdir data 
     ```   
    
     c. Go to the "data" directory and create the three sub-directories: "fastq", "ref", and "db" (see Fig. 1).    
