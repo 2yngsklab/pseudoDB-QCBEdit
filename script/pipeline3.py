@@ -6,7 +6,7 @@ import argparse
 # working directory 
 def set_wd(species) :
     path_dir=os.path.join(species,"module")
-    # module directory
+    # module
     # align : result of aligning FASTQ to reference resulting BAM
     # machine : result of recalibrating maching-provided base quality score
     # error : result of estimating sample error rate
@@ -76,8 +76,18 @@ def align_fastq(species, reference_file, n_thread, file_list) :
     with open(file_list, "r") as f:
         sample_list = [line.strip() for line in f if line.strip()]
 
+    exists_samples=[]
+    missing_samples=[]
 
-    for sample_name in sample_list :         
+    for sample in sample_list :
+        bam_path=f"{species}/module/align/{sample}_aligned.bam"
+
+        if  os.path.exists(bam_path) :
+            exists_samples.append(sample)
+        else :
+            missing_samples.append(sample)
+
+    for sample_name in missing_samples :         
         print(f"\n--- Processing Sample: {sample_name} ---")
     
         # mapping to reference
@@ -147,6 +157,17 @@ def qs_recal(species, reference_file, dbtype, file_list) :
     with open(file_list, "r") as f:
         sample_list = [line.strip() for line in f if line.strip()]
     
+    exists_samples=[]
+    missing_samples=[]
+
+    for sample in sample_list :
+        bam_path=f"{species}/module/machine/{sample}_{dbtype}_recalibrated.bam"
+
+        if os.path.exists(bam_path) :
+            exists_samples.append(sample)
+        else :
+            missing_samples.append(sample)
+ 
     species_name=species.split('/')[-1] 
     db_path=f"{species}/data/db/{species_name}_{dbtype}.vcf.gz"
     if not os.path.exists(db_path) :
@@ -154,7 +175,7 @@ def qs_recal(species, reference_file, dbtype, file_list) :
     
 
     # run each sample
-    for sample_name in sample_list :
+    for sample_name in missing_samples :
         bam_path=f"{species}/module/align/{sample_name}_aligned.bam"
 
         if not os.path.exists(bam_path) :
@@ -194,7 +215,7 @@ def variant_call(species, reference_file, dbtype, file_list):
         if os.path.exists(bam_path) :
             sample_list_str +=f"-I {bam_path} "
         else :
-            missing_samples.append(sample)
+            missing_samples.append(f"{sample}_{dbtype}_recalibrated.bam")
 
     if missing_samples :
         print(f"\nWarning: Bam files for the following samples are missing: {missing_samples}")
@@ -232,7 +253,7 @@ def error_rate(species, reference_file, dbtype, file_list) :
         sys.exit(f"Not found database : {db_path}")		
     
    
-    if database in vcf_list and ".gz" in database :
+    if database in db_path and ".gz" in database :
         os.system(f"zcat {db_path} > {species}/data/db/{species_name}_{dbtype}.vcf")
    
     database=database[:database.find(".gz")]
@@ -245,7 +266,7 @@ def error_rate(species, reference_file, dbtype, file_list) :
             print(f"Warning: Bam files missing for {sample}")
             continue
     
-        os.system(f"samtools mpileup -Bf {ref_path} {bath_path} > {species}/module/error/{sample}_error\n")
+        os.system(f"samtools mpileup -Bf {ref_path} {bam_path} > {species}/module/error/{sample}_error\n")
     
         infile_name=f"{species}/module/error/{sample}_error"  # mileup output file load
         infile=open(infile_name,"r")
@@ -322,7 +343,7 @@ def error_rate(species, reference_file, dbtype, file_list) :
             sample_extract=f"cut -f1,2 {sample_name} > {species}/module/error/{sample}_error_analysis_uniq_pos"     # sample uniq position search
             os.system(sample_extract)
 
-        sdiff_exe=f"sdiff {species}/data/db/{species}_{dbtype}_uniq_pos  {species}/module/error/{sample}_error_analysis_uniq_pos \
+        sdiff_exe=f"sdiff {species}/data/db/{species_name}_{dbtype}_uniq_pos  {species}/module/error/{sample}_error_analysis_uniq_pos \
                 > {species}/module/error/{sample}_{dbtype}_analysis"   ## database and sample analysis file 
         os.system(sdiff_exe)
 
@@ -391,14 +412,17 @@ def error_rate(species, reference_file, dbtype, file_list) :
         rm_cmd=f"rm -rf {species}/module/error/{sample}_error_analysis"
         os.system(rm_cmd)
     
-        rm_cmd=f"rm -rf {species}/data/db/{species_name}_{dbtype}.vcf"
-        os.system(rm_cmd)
-	
 	
         sample_infile.close()
         eff_infile.close()
         error_rate.close()
 
+    rm_cmd=f"rm -rf {species}/data/db/{species_name}_{dbtype}_uniq_pos"
+    os.system(rm_cmd)
+
+    rm_cmd=f"rm -rf {species}/data/db/{species_name}_{dbtype}.vcf"
+    os.system(rm_cmd)
+	
 # end of error_rate()
 
 # Estimate model-adjusted base quality score.
@@ -481,7 +505,6 @@ def main() :
     dbtype=args.database  # the specific database of known variants to be used
     thread=args.thread  # the number of CPU threads to allocate for the process
     """
-	
     if len(sys.argv) < 6 : 
         print("\n[Error] Insufficient arguments.")
         print("python pipeline3.py <species> <ref> <threads> <db_type> <list_of_sample_files>")
@@ -514,7 +537,6 @@ def main() :
     else :
         analysis_file=sys.argv[5]  # the filename of construct a pseudo-database using  pseudo_sample list
 
-	# current directory 
     species=os.getcwd()
     os.chdir(species)
      
@@ -535,17 +557,18 @@ def main() :
         align_fastq(species, ref, thread, analysis_file)
 
         # Recalibrate base quality score from sample.
-        qs_recal(species, ref, dbtype, analysis_file)
+        #qs_recal(species, ref, dbtype, analysis_file)
         
         # Call genetic variants.
-        variant_call(species, ref, dbtype, analysis_file)
+        #variant_call(species, ref, dbtype, analysis_file)
 
         # Estimate sample error rate.
         error_rate(species,ref, dbtype, analysis_file)
 
         # Estimate model-adjusted base quality score.
         qs_model(species, dbtype, analysis_file)
-
+    
+    
 # end of main()
 
 if __name__ == "__main__":
