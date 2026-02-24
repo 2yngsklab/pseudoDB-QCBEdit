@@ -1,15 +1,15 @@
 ## Brown bear data download
-1. Create the required directories  
-    a. If you are working with brown bear data, create a directory named "bear" in your home directory.    
+1. Create the default working directory and its sub-directories.      
+    a. Create a directory named "bear" as your default working directory.    
     ```   
     mkdir bear
  	```   
-    b. In the "bear" directory, create two sub-directories, "data" and "module" (see Fig. 1).    
+    b. In the "bear" directory, create a sub-directory, "data" (see Fig. 1).    
  	```   
     cd bear
    	```
    	```    
-    mkdir data module
+    mkdir data    
     ```   
     c. Go to the "data" directory and create the three sub-directories: "fastq", "ref", and "db" (see Fig. 1).    
  	```   
@@ -19,7 +19,7 @@
     mkdir fastq ref db   
  	```   
 
-3.	Go to the "fastq" directory and download FASTQ file.    
+2.	Go to the "fastq" directory and download FASTQ file.    
     (note) While you can process multiple samples for variant calling, this tutorial uses a single sample to keep the workflow simple.     <br>       
     a. Visit the website: https://www.ebi.ac.uk/ena/browser/view/PRJNA1139383.       <br>
   	
@@ -38,7 +38,7 @@
     wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR299/044/SRR29938644/SRR29938644_2.fastq.gz    
  	```   
 
-4.	Go to the "ref" directory and download the reference sequence.    
+3.	Go to the "ref" directory and download the reference sequence.    
  	```   
   	cd ref
    	```
@@ -52,7 +52,7 @@
     mv GCF_023065955.2_UrsArc2.0_genomic.fna UrsArc2.0_genomic.fa # change reference name
  	```
     
-5.	Go to the "db" directory and download variant database: pseudoDB.  <br>
+4.	Go to the "db" directory and download variant database: pseudoDB.  <br>
  	```   
     wget https://zenodo.org/record/18437343/files/bear_pseudoDB.vcf.gz
    	```          
