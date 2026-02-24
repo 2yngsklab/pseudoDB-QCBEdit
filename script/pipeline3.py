@@ -6,7 +6,7 @@ import argparse
 # working directory 
 def set_wd(species) :
     path_dir=os.path.join(species,"module")
-    # module
+    # module directory
     # align : result of aligning FASTQ to reference resulting BAM
     # machine : result of recalibrating maching-provided base quality score
     # error : result of estimating sample error rate
@@ -481,6 +481,7 @@ def main() :
     dbtype=args.database  # the specific database of known variants to be used
     thread=args.thread  # the number of CPU threads to allocate for the process
     """
+	
     if len(sys.argv) < 6 : 
         print("\n[Error] Insufficient arguments.")
         print("python pipeline3.py <species> <ref> <threads> <db_type> <list_of_sample_files>")
@@ -513,6 +514,7 @@ def main() :
     else :
         analysis_file=sys.argv[5]  # the filename of construct a pseudo-database using  pseudo_sample list
 
+	# current directory 
     species=os.getcwd()
     os.chdir(species)
      
@@ -530,7 +532,7 @@ def main() :
         pseudo_db(species, ref, pseudo_file ) 
     else :  
         # Align FASTQ file of single samples to the reference.
-        #align_fastq(species, ref, thread, analysis_file)
+        align_fastq(species, ref, thread, analysis_file)
 
         # Recalibrate base quality score from sample.
         qs_recal(species, ref, dbtype, analysis_file)
@@ -543,8 +545,7 @@ def main() :
 
         # Estimate model-adjusted base quality score.
         qs_model(species, dbtype, analysis_file)
-    
-    
+
 # end of main()
 
 if __name__ == "__main__":
