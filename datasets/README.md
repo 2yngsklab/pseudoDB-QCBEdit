@@ -1,6 +1,6 @@
 # Data Download Instructions
-This section outlines the procedures for acquiring reference sequences, sample data, and SNP databases (dbSNPs) for the ten species listed below. When all necessary datasets are completely downloaded, the anticipated directory organization is highlighted in Fig 1.  In the following examples:    
-    -	Commands inside code blocks are executable.
+This section outlines the procedures for acquiring reference sequences, sample data, and SNP databases (dbSNPs) for the ten species listed below. When all necessary datasets are completely downloaded, the anticipated directory organization is highlighted in Fig 1.  In the following examples:        
+    - Commands inside code blocks are executable.
     - Lines starting with # are comments providing context.    
 
 Following successful data acquisition, please navigate to the install_workflow directory to set up the environment and initiate the variant calling pipeline.
