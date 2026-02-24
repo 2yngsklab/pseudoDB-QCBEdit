@@ -22,6 +22,6 @@ To facilitate ease of use and verification, this repository includes :
 ### Contact
 For inquiries regarding analytical methods, results, or technical support, please contact:
 -	**HyeonJung Lee**(hyeon@kaist.ac.kr)    
-Korea Advanced Institute of Science and Technology (KAIST)
+*Korea Advanced Institute of Science and Technology (KAIST)*
 -	**Dr. Sunhee Kim** (king@kongju.ac.kr)    
-Kongju National University, South Korea
+*Kongju National University, South Korea*
