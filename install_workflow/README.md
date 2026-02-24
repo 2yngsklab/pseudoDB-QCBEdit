@@ -79,8 +79,8 @@ This section details the execution of the variant calling pipeline. The workflow
 
 Note on db_type Values:    
     1. **null** : Use this when constructing a new pseudo-database.    
-    2. **<dbSNP Name>**: Use this when calling variants using an existing dbSNP.    
-    3. **<pseudoDB Name>**: Use this when calling variants using a previously generated pseudo-database.    <br><br>
+    2. **\<dbSNP Name\>**: Use this when calling variants using an existing dbSNP.    
+    3. **\<pseudoDB Name\>**: Use this when calling variants using a previously generated pseudo-database.    <br><br>
 Note: Certain species may lack established dbSNP resources.
 
 #### GATK3 Workflow
@@ -98,8 +98,8 @@ conda activate gatk3         # Activate the environment
 Execute the variant calling functions by following this command structure:
 **python pipeline3.py <species> <ref> <threads> <db_type> <list_of_samples>**    <br>
 
-We have provided three example use cases based on the human dataset to guide you. 
-Using the "human" dataset as an example, the three supported use cases are demonstrated below:    
+We have provided three example use cases based on the human dataset to guide you.    
+  
 - ##### Case 1: Generating a New Pseudo-Database
     ```  
     python pipeline3.py human GRCh38_full_analysis_set_plus_decoy_hla.fa 16 pseudo_file.txt null 16
