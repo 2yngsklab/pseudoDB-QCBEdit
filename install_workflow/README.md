@@ -5,7 +5,7 @@ This tutorial is organized into two sections: tool installation and the genetic 
   
 Note: Ensure all required data has been fully downloaded before proceeding.
 
-<img width="800" height="350" alt="image" src="https://github.com/user-attachments/assets/7ebf5eb5-5dc2-4506-ab0a-8ed463fdefb2" />  <br>
+<img width="800" height="350" alt="image" src="https://github.com/user-attachments/assets/38e5a96e-2a8c-49be-bc23-f557ea28ded6" />>  <br>
 *Fig. 1 : The overall structure of the directories.*
 <br><br>
 ## Section1: Installation Procedure
