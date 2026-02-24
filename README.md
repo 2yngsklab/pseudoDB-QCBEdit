@@ -14,7 +14,7 @@ Note: Please begin in the datasets/, where you can establish your default workin
 This project establishes a transparent pipeline for the genetic variant discovery across diverse species using parameterized workflows and curated datasets. By making all code and results publicly available, we ensure the complete reproducibility of the analyses presented in our associated manuscript.
 
 ### Reproducibility
-To facilitate ease of use and verification, this repository includes:
+To facilitate ease of use and verification, this repository includes :
 -	**Installation Guide** : Comprehensive instructions for setting up the required software environment.
 -	**Workflow Scripts** : Fully documented scripts with pre-defined parameters.
 -	**Validation Datasets** : Example datasets provided for testing and pipeline verification.
