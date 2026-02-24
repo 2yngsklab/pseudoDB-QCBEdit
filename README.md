@@ -8,7 +8,7 @@ This repository provides a comprehensive workflow, including configuration files
 -	**script/** - Primary analysis scripts for the genetic variant calling.
 -	**supp/** - Supplementary data and documentation.    
 <br>
-Note: Please begin in the **datasets/**, where you can establish your default working directory.
+Note: Please begin in the __datasets/__, where you can establish your default working directory.
 
 ### Scientific Motivation
 This project establishes a transparent pipeline for the genetic variant discovery across diverse species using parameterized workflows and curated datasets. By making all code and results publicly available, we ensure the complete reproducibility of the analyses presented in our associated manuscript.
