@@ -555,13 +555,13 @@ def main() :
         align_fastq(species, ref, thread, analysis_file)
 
         # Recalibrate base quality score from sample.
-        #qs_recal(species, ref, dbtype, analysis_file)
+        qs_recal(species, ref, dbtype, analysis_file)
         
         # Call genetic variants.
-        #variant_call(species, ref, dbtype, analysis_file)
+        variant_call(species, ref, dbtype, analysis_file)
 
         # Estimate sample error rate.
-        #error_rate(species,ref, dbtype, analysis_file)
+        error_rate(species,ref, dbtype, analysis_file)
 
         # Estimate model-adjusted base quality score.
         qs_model(species, dbtype, analysis_file)
