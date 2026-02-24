@@ -6,7 +6,7 @@ import argparse
 # working directory 
 def set_wd(species) :
     path_dir=os.path.join(species,"module")
-    # module
+    # module directory
     # align : result of aligning FASTQ to reference resulting BAM
     # machine : result of recalibrating maching-provided base quality score
     # error : result of estimating sample error rate
