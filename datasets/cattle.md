@@ -20,7 +20,7 @@
     mkdir fastq ref db
     ```       
 
-3.	Go to the "fastq" directory and download FASTQ file.    
+2.	Go to the "fastq" directory and download FASTQ file.    
     (Note)  While you can process multiple samples for variant calling, this tutorial uses a single sample to keep the workflow simple.      <br>       
     a. Visit the website: https://www.ebi.ac.uk/ena/browser/view/PRJNA238491.     <br>
   	
@@ -39,7 +39,7 @@
   	wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR129/007/SRR1293227/SRR1293227_2.fastq.gz
     ```
     
-4.	Go to the "ref" directory and download the reference sequence    
+3.	Go to the "ref" directory and download the reference sequence    
  	```   
     cd ref
    	```
@@ -52,7 +52,7 @@
    	```      	    
     mv GCF_000003055.6_Bos_taurus_UMD_3.1.1_genomic.fna  Bos_taurus_UMD_3.1.1_genomic.fa   
    	```        
-5.	Go to the "db" directory and download two variant databases: dbSNP and pseudoDB.  <br>
+4.	Go to the "db" directory and download two variant databases: dbSNP and pseudoDB.  <br>
     a.	Download dbSNP of cattle and assign a new name to it.   
  	```   
     wget https://ftp.ncbi.nih.gov/snp/organisms/archive/cow_9913/VCF/00-All.vcf.gz  
