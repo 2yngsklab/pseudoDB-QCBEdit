@@ -478,7 +478,7 @@ def qs_model(species, dbtype, file_list) :
         sample_outfile.write(f"{sample_name}\t{hhap/hap}")
         sample_outfile.close()
 
-        os.remove(f"rm -rf {sam_path}")
+        os.remove(f"{sam_path}")
 
 # end of qs_model()
 
