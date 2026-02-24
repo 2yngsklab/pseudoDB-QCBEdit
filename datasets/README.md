@@ -1,5 +1,9 @@
 # Data Download Instructions
-This section outlines the procedures for acquiring reference sequences, sample data, and SNP databases (dbSNPs) for the ten species listed below. When all necessary datasets are completely downloaded, the anticipated directory organization is highlighted in Figure 1. Within the provided examples, executable commands are contained in code blocks, and explanatory comments are denoted by a **#** prefix. Following successful data acquisition, please navigate to the **install_workflow** directory to set up the environment and initiate the variant calling pipeline.
+This section outlines the procedures for acquiring reference sequences, sample data, and SNP databases (dbSNPs) for the ten species listed below. When all necessary datasets are completely downloaded, the anticipated directory organization is highlighted in Fig 1.  In the following examples:    
+    -	Commands inside code blocks are executable.
+    - Lines starting with # are comments providing context.    
+
+Following successful data acquisition, please navigate to the install_workflow directory to set up the environment and initiate the variant calling pipeline.
 <br><br>
 Target Species: African_oil_palm, Brown_bear, Cattle, Chickpea, Human, Komodo_dragon, Rice, Sheep, Stevia, and Swan_goose.
 <img width="800" height="350" alt="image" src="https://github.com/user-attachments/assets/1d684a91-8a4f-494c-814a-00ce3435d639" /><br>
