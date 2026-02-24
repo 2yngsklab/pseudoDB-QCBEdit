@@ -17,7 +17,7 @@ This project establishes a transparent pipeline for the genetic variant discover
 To facilitate ease of use and verification, this repository includes:
 -	**Installation Guide** : Comprehensive instructions for setting up the required software environment.
 -	**Workflow Scripts** : Fully documented scripts with pre-defined parameters.
--	**Validation Datasets**: Example datasets provided for testing and pipeline verification.
+-	**Validation Datasets** : Example datasets provided for testing and pipeline verification.
 
 ### Contact
 For inquiries regarding analytical methods, results, or technical support, please contact:
