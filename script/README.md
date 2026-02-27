@@ -1,26 +1,65 @@
-## Script Usage
+# pseudoDB Pipeline
+
+A pipeline for reference-based variant calling from FASTQ files, supporting both pseudo-database construction and variant calling with an existing database (e.g. dbSNP).
+
+---
+
+## Requirements
+
+The following tools must be available on your `PATH`:
+
+- Python 3
+- `bwa-mem2`
+- `samtools`
+- `picard`
+- `gatk` (GATK 3, using `-T` syntax)
+
+Python dependencies: `re`, `os`, `sys`, `shutil`, `argparse`, `subprocess` (all standard library).
+
+---
+
+## Installation
+
+See `install.sh` for installing the pipeline as a system-wide or user-level command.
 
 ```bash
-pseudoDB.py -sp <species_name> -fa <fasta> -s <sample_list> -o <output_dir> [options]
+# User-level install (default, no sudo required)
+./install.sh
+
+# Custom install directory
+./install.sh --install-dir=/usr/local/bin
+
+# Custom conda environment name
+./install.sh --env-name=myenv
+```
+
+After installation, activate the conda environment before running:
+
+```bash
+conda activate gatk3
+```
+
+---
+
+## Usage
+
+```bash
+pseudoDB -sp <species_name> -fa <fasta> -s <sample_list> -o <output_dir> [options]
 ```
 
 ### Required Arguments
 
-| Flag | Long | Description |
-|------|------|-------------|
-| `-sp` | `--species` | Species name used in output file naming |
-| `-fa` | `--fasta` | Path to reference FASTA file (`.fa`, `.fna`, `.fasta`, optionally `.gz`) |
-| `-s` | `--sample-list` | Path to file listing FASTQ input paths (one per line) |
-| `-o` | `--output-dir` | Path to root output directory (created if it doesn't exist) |
+- `-sp`, `--species` — Species name used in output file naming
+- `-fa`, `--fasta` — Path to reference FASTA file (`.fa`, `.fna`, `.fasta`, optionally `.gz`)
+- `-s`, `--sample-list` — Path to file listing FASTQ input paths (one per line)
+- `-o`, `--output-dir` — Path to root output directory (created if it doesn't exist)
 
 ### Optional Arguments
 
-| Flag | Long | Default | Description |
-|------|------|---------|-------------|
-| `-db` | `--database` | `None` | Path to database VCF (`.vcf`, `.vcf.gz`, `.bcf`, `.bcf.gz`). If omitted, pipeline runs in pseudo-database construction mode |
-| `-dn` | `--database-name` | Derived from `-db` filename | Name used in output file naming. If not provided, derived by stripping VCF extension from the database filename |
-| `-t` | `--threads` | `1` | Number of CPU threads passed to `bwa-mem2 mem` |
-| `-sl` | `--softlink` | `False` | If set, input files are softlinked into the output directory instead of copied |
+- `-db`, `--database` — Path to database VCF (`.vcf`, `.vcf.gz`, `.bcf`, `.bcf.gz`). If omitted, pipeline runs in pseudo-database construction mode
+- `-dn`, `--database-name` — Name used in output file naming. If not provided, derived by stripping the VCF extension from the database filename
+- `-t`, `--threads` — Number of CPU threads passed to `bwa-mem2 mem` (default: `1`)
+- `-sl`, `--softlink` — If set, input files are softlinked into the output directory instead of copied
 
 ---
 
@@ -28,33 +67,39 @@ pseudoDB.py -sp <species_name> -fa <fasta> -s <sample_list> -o <output_dir> [opt
 
 **Construct a pseudo-database:**
 ```bash
-pseudoDB.py \
-  -sp human \
-  -fa /refs/GRCh38.fa \
-  -s /data/sample_list.txt \
-  -o /results/human_run
+/usr/bin/time --verbose pseudoDB \
+  -sp human_chr12 \
+  -fa ./human/chr12.fa \
+  -s ./human/sample_list_chr12.txt \
+  -o ./human_chr12_case1 \
+  -t 16 -sl \
+  > ./human_chr12_case1.log 2>&1
 ```
 
 **Variant calling with dbSNP:**
 ```bash
-pseudoDB.py \
-  -sp human \
-  -fa /refs/GRCh38.fa \
-  -s /data/sample_list.txt \
-  -o /results/human_run \
-  -db /data/db/dbSNP_v155.vcf.gz \
-  -dn dbSNP
+/usr/bin/time --verbose pseudoDB \
+  -sp human_chr12 \
+  -fa ./human/chr12.fa \
+  -s ./human/sample_list_chr12.txt \
+  -o ./human_chr12_case2 \
+  -db ./human/chr12_dbSNP.vcf.gz \
+  -dn dbSNP \
+  -t 16 -sl \
+  > ./human_chr12_case2.log 2>&1
 ```
 
 **Variant calling with a previously generated pseudoDB:**
 ```bash
-pseudoDB.py \
-  -sp human \
-  -fa /refs/GRCh38.fa \
-  -s /data/sample_list.txt \
-  -o /results/human_run2 \
-  -db /results/human_run/data/db/human_pseudoDB.vcf.gz
-  -dn pseudoDB
+/usr/bin/time --verbose pseudoDB \
+  -sp human_chr12 \
+  -fa ./human/chr12.fa \
+  -s ./human/sample_list_chr12.txt \
+  -o ./human_chr12_case3 \
+  -db ./human/chr12_pseudoDB.vcf.gz \
+  -dn pseudoDB \
+  -t 16 -sl \
+  > ./human_chr12_case3.log 2>&1
 ```
 
 ---
@@ -106,14 +151,12 @@ output_dir/
 
 All output files are named using `<species_name>` (from `-sp`) and `<db_name>` (from `-dn` or derived from `-db`).
 
-| File | Location | Pattern |
-|------|----------|---------|
-| Aligned BAM | `module/align/` | `<sample>_aligned.bam` |
-| Recalibrated BAM | `module/machine/` | `<sample>_<db_name>_recalibrated.bam` |
-| Variant call VCF | `module/variants/` | `<species>_<db_name>_variant_calling.vcf.gz` |
-| Error rate file | `module/error/` | `<sample>_<db_name>_erate` |
-| Quality score file | `module/model/` | `<sample>_<db_name>_qs` |
-| PseudoDB VCF | `data/db/` | `<species>_pseudoDB.vcf.gz` |
+- Aligned BAM: `module/align/<sample>_aligned.bam`
+- Recalibrated BAM: `module/machine/<sample>_<db_name>_recalibrated.bam`
+- Variant call VCF: `module/variants/<species>_<db_name>_variant_calling.vcf.gz`
+- Error rate file: `module/error/<sample>_<db_name>_erate`
+- Quality score file: `module/model/<sample>_<db_name>_qs`
+- PseudoDB VCF: `data/db/<species>_pseudoDB.vcf.gz`
 
 ---
 
@@ -150,8 +193,8 @@ By default, all input files (FASTA, database VCF, FASTQ files) are **copied** in
 
 - If symlink creation fails for any reason, the pipeline automatically falls back to copying the file.
 - If source and destination resolve to the same absolute path, the operation is skipped silently.
-- Softlinks point to the original source paths, so moving or deleting the source files after running the pipeline will break them.
-- **Please be careful with softlink deletion as the original source file may be affected**
+- Softlinks point to the original source paths, so moving or deleting the source files after running will break them.
+- **Please be careful with softlinked files — deleting them from the output directory may affect the original source files on some systems.**
 
 ---
 
