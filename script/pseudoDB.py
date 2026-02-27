@@ -5,58 +5,167 @@ import shutil
 import argparse
 import subprocess
 
-# TODO:
-# SOFTLINK INSTEAD OF COPY
+def put_file(src, dest, softlink = False):
+	"""
+	Function to either copy files or create softlinks.
+	If softlink creation fails, it will fall back to copying.
 
-def set_wd(output_dir_path):
+	Arguments:
+	- src: Path to source file
+	- dest: Path to destination
+	- softlink: Create softlink if true. Otherwise, copy the file.
+	"""
+	if os.path.abspath(src) == os.path.abspath(dest):
+		print(f"Source and destination are the same file: {src}, {dest}. Skipping.")
+		return
+	
+	if softlink:
+		try:
+			os.symlink(src, dest)
+		except FileExistsError:
+			print(f"Symlink or file already exists: {dest}. Skipping.")
+		except Exception as e:
+			print(f"Failed to create symlink: {e}")
+			print(f"Attempting to copy file instead...")
+			return put_file(src, dest, softlink = False)
+		else:
+			print(f"Created symlink: {dest} -> {src}")
+	else:
+		try:
+			shutil.copy2(src, dest)
+		except Exception as e:
+			raise type(e)(f"Failed to copy file {src} to {dest}: {e}") from e
+		else:
+			print(f"Copied file {dest} from {src}")
+
+def process_sample_list(sample_paths_file):
+	"""
+	Reads the sample_paths_file, returns a dictionary of {sample_acc: (sample_r1_path, sample_r2_path)}.
+
+	Arguments:
+	- sample_paths_file: Path to file containing a list of paths to samples. 1 sample per line, with pattern _(1|2)\.(fastq|fq)(\.gz)?$
+	
+	Returns:
+	- sample_dict: A dictionary of samples with sample name as key and (r1_path, r2_path) as values.
+	"""
+
+	# Read and check existence of every file
+	sample_file_paths = []
+	with open(sample_paths_file, "r") as f:
+		sample_file_paths = [file_path.strip() for file_path in f if file_path.strip()]
+
+	for sample_file_path in sample_file_paths:
+		if not os.path.exists(sample_file_path):
+			raise FileNotFoundError(f"Sample file not found or is not accessible: {sample_file_path}")
+		
+	
+	# Pair sample files
+	sample_dict = {}
+	for sample_file_path in sample_file_paths:
+		file_name_components = re.match(r'^(.+)_(1|2)\.(fastq|fq)(\.gz)?$', os.path.basename(sample_file_path))
+		if file_name_components:
+			sample = file_name_components.group(1)
+			read_num = int(file_name_components.group(2))
+			
+			read_idx = read_num - 1
+			if sample in sample_dict.keys() and sample_dict[sample][read_idx]:
+				print(f"Duplicate R{read_num} detected for sample: {sample}. The first one will be used.")
+			else:
+				read_files = sample_dict.get(sample, ["", ""])
+				read_files[read_idx] = sample_file_path
+				sample_dict[sample] = read_files
+
+	# Check pairs
+	has_missing = False
+	for sample, reads in sample_dict.items():
+		r1, r2 = reads
+		if not r1:
+			print(f"Missing R1 for sample {sample} (R2: {r2})")
+			has_missing = True
+		if not r2:
+			print(f"Missing R2 for sample {sample} (R1: {r1})")
+			has_missing = True
+
+	if has_missing:
+		raise FileNotFoundError(f"One or more pairs were not found")
+
+	return sample_dict
+
+def set_wd(output_dir_path, sample_paths_file, src_fasta_path, src_database_path = None, softlink = False):
 	"""
 	Set output directory of the following structure:
 		output_dir_path
 		|-- data
-		|   |-- db
-		|   |-- fastq
-		|   `-- ref
+		|   |-- db -> Location of VCF database files
+		|   |-- fastq -> Location of FASTQ files
+		|   `-- ref -> Location of reference FASTA file and index files
 		`-- module
 			|-- align
 			|-- error
 			|-- machine
 			|-- model
 			`-- variants
+	This function also copies (or softlinks) source input files to appropriate destinations.
 
 	Arguments:
-	- output_dir_path: Path for output directory
+	- output_dir_path: Path for root output directory.
+	- sample_paths_file: Path to file containing a list of paths to samples. 1 sample per line, with pattern _(1|2)\.(fastq|fq)(\.gz)?$
+	- src_fasta_path: Path to input FASTA file.
+	- src_database_path: Path to input database VCF file (optional).
+
+	Returns:
+	- sample_dict: A dictionary of samples with sample name as key and (r1_path, r2_path) as values.
+	- fasta_path: Path to the usable FASTA file (in data/ref).
+	- db_path: Path to the usable database VCF file (in data/db).
 	"""
 
 	print(f"Setting up output directory: {output_dir_path}")
 
+	# Create folders
 	for data_dir in ["db", "fastq", "ref"]:
 		os.makedirs(os.path.join(output_dir_path, "data", data_dir), exist_ok = True)
 	
 	for module_dir in ["align", "error", "machine", "model", "variants"]:
 		os.makedirs(os.path.join(output_dir_path, "module", module_dir), exist_ok = True)
 
-	print("All directories are ready.")
+	# Copy/softlink files
+	fasta_path = os.path.join(output_dir_path, "data", "ref", os.path.basename(src_fasta_path))
+	put_file(src_fasta_path, fasta_path, softlink = softlink)
+	
+	db_path = None
+	if src_database_path is not None:
+		db_path = os.path.join(output_dir_path, "data", "db", os.path.basename(src_database_path))
+		put_file(src_database_path, db_path, softlink = softlink)
 
+	src_sample_dict = process_sample_list(sample_paths_file)
+	sample_dict = {}
 
+	for sample, files in src_sample_dict.items():
+		src_r1, src_r2 = files
+		
+		dest_r1 = os.path.join(output_dir_path, "data", "fastq", os.path.basename(src_r1))
+		dest_r2 = os.path.join(output_dir_path, "data", "fastq", os.path.basename(src_r2))
 
-def pre_align(ref_folder, src_fasta_path):
+		put_file(src_r1, dest_r1, softlink = softlink)
+		put_file(src_r2, dest_r2, softlink = softlink)
+		
+		sample_dict[sample] = [dest_r1, dest_r2]
+
+	print("All directories and input files are ready.")
+
+	return sample_dict, fasta_path, db_path
+
+def pre_align(fasta_path):
 	"""
 	Generate index files for reference FASTA.
 
 	Arguments:
-	- ref_folder: Reference file folder data/ref.
-	- src_fasta_path: Path to input FASTA file.
+	- fasta_path: Path to the usable FASTA file (in data/ref).
 	"""
-
-	if not os.path.exists(src_fasta_path):
-		raise FileNotFoundError(f"FASTA file not found or is not accessible: {src_fasta_path}")
-
-	fasta_path = os.path.join(ref_folder, os.path.basename(src_fasta_path))
 	
-	if not os.path.exists(fasta_path):
-		shutil.copy2(src_fasta_path, fasta_path)
+	ref_folder = os.path.dirname(fasta_path)
 
-	fasta_dict_path = re.sub(r'\.(fa|fna)(.gz)?$', '.dict', fasta_path)
+	fasta_dict_path = re.sub(r'\.(fa|fna|fasta)(.gz)?$', '.dict', fasta_path)
 	file_exts = [
 		f"{fasta_path}.0123",
 		f"{fasta_path}.amb",
@@ -98,72 +207,20 @@ def pre_align(ref_folder, src_fasta_path):
 
 	print("Reference preprocessing completed successfully.")
 
-
-
-def process_sample_list(sample_paths_file):
-	"""
-	Reads the sample_paths_file, returns a dictionary of {sample_acc: (sample_r1_path, sample_r2_path)}.
-
-	Arguments:
-	- sample_paths_file: Path to file containing a list of paths to samples. 1 sample per line, with pattern _(1|2)\.(fastq|fq)(\.gz)?$
-	"""
-
-	# Read and check existence of every file
-	sample_file_paths = []
-	with open(sample_paths_file, "r") as f:
-		sample_file_paths = [file_path.strip() for file_path in f if file_path.strip()]
-
-	for sample_file_path in sample_file_paths:
-		if not os.path.exists(sample_file_path):
-			raise FileNotFoundError(f"Sample file not found or is not accessible: {sample_file_path}")
-		
-	
-	# Pair sample files
-	sample_pairs = {}
-	for sample_file_path in sample_file_paths:
-		file_name_components = re.match(r'^(.+)_(1|2)\.(fastq|fq)(\.gz)?$', os.path.basename(sample_file_path))
-		if file_name_components:
-			sample = file_name_components.group(1)
-			read_num = int(file_name_components.group(2))
-			
-			read_idx = read_num - 1
-			if sample in sample_pairs.keys() and sample_pairs[sample][read_idx]:
-				print(f"Duplicate R{read_num} detected for sample: {sample}. The first one will be used.")
-			else:
-				read_files = sample_pairs.get(sample, ["", ""])
-				read_files[read_idx] = sample_file_path
-				sample_pairs[sample] = read_files
-
-	# Check pairs
-	has_missing = False
-	for sample, reads in sample_pairs.items():
-		r1, r2 = reads
-		if not r1:
-			print(f"Missing R1 for sample {sample} (R2: {r2})")
-			has_missing = True
-		if not r2:
-			print(f"Missing R2 for sample {sample} (R1: {r1})")
-			has_missing = True
-
-	if has_missing:
-		raise FileNotFoundError(f"One or more pairs were not found")
-
-	return sample_pairs
-
-
-
-def align_fastq(module_align_dir, n_thread, sample_pair_dict, fasta_path):
+def align_fastq(sample_dict, fasta_path, output_dir_path, n_thread):
 	"""
 	Align FASTQ file of single samples to the reference.
 
 	Arguments:
-	- module_align_dir: Path to the module/align/ directory.
-	- n_thread: Number of threads passed to BWA MEM.
-	- sample_pair_dict: A dictionary of {sample_name: (sample_r1_path, sample_r2_path)}
+	- sample_dict: A dictionary of samples with sample name as key and (r1_path, r2_path) as values.
 	- fasta_path: Path to FASTA file in data/ref.
+	- output_dir_path: Path for root output directory.
+	- n_thread: Number of threads passed to BWA MEM.
 	"""
 
-	for sample_name, reads_set in sample_pair_dict.items():
+	module_align_dir = os.path.join(output_dir_path, "module", "align")
+
+	for sample_name, reads_set in sample_dict.items():
 		if os.path.exists(os.path.join(module_align_dir, f"{sample_name}_aligned.bam")):
 			continue
 
@@ -183,6 +240,7 @@ def align_fastq(module_align_dir, n_thread, sample_pair_dict, fasta_path):
 		subprocess.run(cmd_align, shell=True, check=True)
 
 		# Mark Duplicate and Sort
+		os.makedirs(tmp_dir, exist_ok = True)
 		subprocess.run(["picard","SortSam",f"I={init_sam_path}", f"TMP_DIR={tmp_dir}", \
 				f"O={sorted_sam_path}", "SORT_ORDER=coordinate"],check=True)
 	
@@ -199,18 +257,22 @@ def align_fastq(module_align_dir, n_thread, sample_pair_dict, fasta_path):
 		if os.path.exists(metrics_txt_path):
 			os.remove(metrics_txt_path)
 
-
-
-def pseudo_db(sample_list, module_align_dir, fasta_path, output_vcf_path):
+def pseudo_db(species_name, sample_list, fasta_path, output_dir_path):
 	"""
 	Construct a pseudo database by using all samples in the align directory.
 
 	Arguments:
+	- species_name: Name of species that will be used in output file names.
 	- sample_list: List of sample names.
-	- module_align_dir: Path to the module/align/ directory.
 	- fasta_path: Path to FASTA file in data/ref.
-	- output_vcf_path: Path to save output pseudoDB in data/db.
+	- output_dir_path: Path for root output directory.
+
+	Return:
+	- output_vcf_path: Path to output pseudoDB VCF file.
 	"""
+
+	module_align_dir = os.path.join(output_dir_path, "module", "align")
+	output_vcf_path = os.path.join(output_dir_path, "data", "db", f"{species_name}_pseudoDB.vcf.gz")
 
 	sample_list_strs = []
 	missing_sample_strs = []
@@ -236,20 +298,22 @@ def pseudo_db(sample_list, module_align_dir, fasta_path, output_vcf_path):
 	vcf_cmd = f"gatk -T UnifiedGenotyper -R {fasta_path} {' '.join(sample_list_strs)} -o {output_vcf_path} --genotype_likelihoods_model BOTH"
 	subprocess.run(vcf_cmd, shell=True, check=True)
 
+	return output_vcf_path
 
-
-def qs_recal(sample_list, module_align_dir, module_machine_dir, db_path, db_name, fasta_path):
+def qs_recal(sample_list, fasta_path, db_name, db_path, output_dir_path):
 	"""
 	Recalibrate base quality score from samples.
 
 	Arguments:
 	- sample_list: List of sample names.
-	- module_align_dir: Path to the module/align/ directory.
-	- module_machine_dir: Path to the module/machine/ directory.
-	- db_path: Path to the database VCF.
-	- db_name: Name of database VCF that will be used in output file names.
 	- fasta_path: Path to FASTA file in data/ref.
+	- db_name: Name of database VCF that will be used in output file names.
+	- db_path: Path to the database VCF.
+	- output_dir_path: Path for root output directory.
 	"""
+
+	module_align_dir = os.path.join(output_dir_path, "module", "align")
+	module_machine_dir = os.path.join(output_dir_path, "module", "machine")
 
 	if not os.path.exists(db_path) :
 		raise FileNotFoundError(f"Database VCF file not found or is not accessible in path {db_path}")
@@ -275,21 +339,24 @@ def qs_recal(sample_list, module_align_dir, module_machine_dir, db_path, db_name
 				os.remove(f"{recal_table_path}.log")
 				os.remove(f"{recalibrated_bam_path}.log")
 
-
-
-def variant_call(sample_list, module_machine_dir, module_variants_dir, species_name, db_name, fasta_path):
+def variant_call(species_name, sample_list, fasta_path, db_name, output_dir_path):
 	"""
 	Call genetic variants - step 1 : Call variants from each samples.
 
 	Arguments:
-	- sample_list: list of sample names
-	- module_machine_dir: Path to the module/machine/ directory.
-	- module_variants_dir: Path to the module/variants/ directory.
 	- species_name: Name of species that will be used in output file names.
-	- db_name: Name of database VCF that will be used in output file names.
+	- sample_list: list of sample names
 	- fasta_path: Path to FASTA file in data/ref.
+	- db_name: Name of database VCF that will be used in output file names.
+	- output_dir_path: Path for root output directory.
+
+	Return:
+	- output_vcf: Path to resulting VCF file from variant calling.
 	"""
-	
+
+	module_machine_dir = os.path.join(output_dir_path, "module", "machine")
+	module_variants_dir = os.path.join(output_dir_path, "module", "variants")
+
 	sample_list_strs = []
 	missing_sample_strs = []
 	for sample in sample_list:
@@ -317,21 +384,27 @@ def variant_call(sample_list, module_machine_dir, module_variants_dir, species_n
 	# delete file
 	os.remove(f"{output_vcf}.log")
 
+	return output_vcf
 
-def error_rate(sample_list, data_db_dir, module_align_dir, module_error_dir, species_name, db_path, db_name, fasta_path):
+def error_rate(species_name, sample_list, fasta_path, db_name, db_path, output_dir_path):
 	"""
 	Estimate sample error rate.
 
 	Arguments:
-	- sample_list: list of sample names.
-	- data_db_dir: Path to the data/db/ directory.
-	- module_align_dir: Path to the module/align/ directory.
-	- module_error_dir: Path to the module/error/ directory.
 	- species_name: Name of species that will be used in output file names.
-	- db_path: Path to the database VCF.
-	- db_name: Name of database VCF that will be used in output file names.
+	- sample_list: list of sample names.
 	- fasta_path: Path to FASTA file in data/ref.
+	- db_name: Name of database VCF that will be used in output file names.
+	- db_path: Path to the database VCF.
+	- output_dir_path: Path for root output directory.
+
+	Return:
+	- module_error_dir: Path to directory containing error rate calculation result.
 	"""
+	
+	data_db_dir = os.path.join(output_dir_path, "data", "db")
+	module_align_dir = os.path.join(output_dir_path, "module", "align")
+	module_error_dir = os.path.join(output_dir_path, "module", "error")
 
 	## database check
 	if not os.path.exists(db_path):
@@ -340,7 +413,7 @@ def error_rate(sample_list, data_db_dir, module_align_dir, module_error_dir, spe
 		db_path = os.path.splitext(db_path)[0]
 		subprocess.run(f"zcat {db_path}.gz > {db_path}", shell=True, check=True)
 
-
+	db_uniq_check = None
 	for sample in sample_list:
 		aligned_bam_path = os.path.join(module_align_dir, f"{sample}_aligned.bam")
 
@@ -441,7 +514,7 @@ def error_rate(sample_list, data_db_dir, module_align_dir, module_error_dir, spe
 		sample_infile=open(sample_error_analysis_path,"r")
 		eff_infile=open(eff_name,"r")
 
-		error_rate=open(error_rate_file,"w")
+		error_rate_handle=open(error_rate_file,"w")
 
 		mismatch_str="awk '{ sum+=$5} END { print sum;}'"
 		mismatch_cmd=f"{mismatch_str} {sample_error_analysis_path} > {mismatch_name}"
@@ -470,7 +543,7 @@ def error_rate(sample_list, data_db_dir, module_align_dir, module_error_dir, spe
 					eff_num=eff_num+int(base_list[4])
 					break
 
-		error_rate.write(f"{sample}\t{(mismatch_num-eff_num)/mismatch_num}")
+		error_rate_handle.write(f"{sample}\t{(mismatch_num-eff_num)/mismatch_num}")
 
 		os.remove(sample_db_variant_pos)
 	
@@ -481,24 +554,30 @@ def error_rate(sample_list, data_db_dir, module_align_dir, module_error_dir, spe
 		mismatch_infile.close()
 		sample_infile.close()
 		eff_infile.close()
-		error_rate.close()
+		error_rate_handle.close()
 
-	os.remove(db_uniq_check)
+	if db_uniq_check is not None:
+		os.remove(db_uniq_check)
 
 	# os.remove(f"{species}/data/db/{species_name}_{dbtype}.vcf") # Maybe don't delete the VCF file?
 
+	return module_error_dir
 
-
-def qs_model(sample_list, module_machine_dir, module_model_dir, db_name):
+def qs_model(sample_list, db_name, output_dir_path):
 	"""
 	Estimate model-adjusted base quality score.
 
 	Arguments:
 	- sample_list: list of sample names
-	- module_machine_dir: Path to the module/machine/ directory.
-	- module_model_dir: Path to the module/model/ directory.
 	- db_name: Name of database VCF that will be used in output file names.
+	- output_dir_path: Path for root output directory.
+
+	Return:
+	- module_model_dir: Path to directory containing estimation of model-adjusted base quality score.
 	"""
+
+	module_machine_dir = os.path.join(output_dir_path, "module", "machine")
+	module_model_dir = os.path.join(output_dir_path, "module", "model")
 
 	for sample in sample_list:
 		recalibrated_bam_path = os.path.join(module_machine_dir, f"{sample}_{db_name}_recalibrated.bam")
@@ -548,15 +627,89 @@ def qs_model(sample_list, module_machine_dir, module_model_dir, db_name):
 
 		os.remove(recalibrated_sam_path)
 
-def main():
-	pass
+	return module_model_dir
+
+def main(species_name, src_fasta_path, sample_paths_file, output_dir_path, src_database_path = None, db_name = None, n_thread = 1, softlink = False):
+	sample_dict, fasta_path, db_path = set_wd(
+											output_dir_path = output_dir_path,
+											sample_paths_file = sample_paths_file,
+											src_fasta_path = src_fasta_path,
+											src_database_path = src_database_path,
+											softlink = softlink
+										)
+	sample_list = list(sample_dict.keys())
+
+	pre_align(fasta_path = fasta_path)
+	align_fastq(
+		sample_dict = sample_dict,
+		fasta_path = fasta_path,
+		output_dir_path = output_dir_path,
+		n_thread = n_thread
+	)
+	
+	if src_database_path is None:
+		pseudo_db(
+			species_name = species_name,
+			sample_list = sample_list,
+			fasta_path = fasta_path,
+			output_dir_path = output_dir_path
+		)
+	else:
+		db_name = db_name if db_name is not None else re.sub(r'\.(vcf|bcf)(\.gz)?$', '', os.path.basename(src_database_path))
+
+		qs_recal(
+			sample_list = sample_list,
+			fasta_path = fasta_path,
+			db_name = db_name,
+			db_path = db_path,
+			output_dir_path = output_dir_path
+		)
+
+		vc_vcf_path = variant_call(
+			species_name = species_name,
+			sample_list = sample_list,
+			fasta_path = fasta_path,
+			db_name = db_name,
+			output_dir_path = output_dir_path
+		)
+		print(f"VCF result of variant-calling saved: {vc_vcf_path}")
+
+		err_rate_dir = error_rate(
+			species_name = species_name,
+			sample_list = sample_list,
+			fasta_path = fasta_path,
+			db_name = db_name,
+			db_path = db_path,
+			output_dir_path = output_dir_path
+		)
+		print(f"Error rate saved in directory: {err_rate_dir}")
+
+		qs_model_dir = qs_model(
+			sample_list = sample_list,
+			db_name = db_name,
+			output_dir_path = output_dir_path
+		)
+		print(f"Model-adjusted quality scores saved in directory: {qs_model_dir}")
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-sp", "--species",			required=True,	type=str,	help=f"Target species name for output file naming.")
-	parser.add_argument("-fa", "--fasta",			required=True,	type=str,	help=f"Path to reference FASTA file.")
-	parser.add_argument("-s",  "--sample-list",		required=True,	type=str,	help=f"Path to file containing sample FASTQ paths.")
-	parser.add_argument("-o",  "--output-dir",		required=True,	type=str,	help=f"Path to output directory.")
-	parser.add_argument("-db", "--database",		default=None,	type=str,	help=f"Path to database VCF to use.")
-	parser.add_argument("-dn", "--database-name",	default=None,	type=str,	help=f"Name of database for output file naming.")
-	parser.add_argument("-t",  "--threads",			default=1,		type=str,	help=f"Number of CPU threads to use [1].")
+	parser.add_argument("-sp", "--species",			required=True,		type=str,	help=f"Target species name for output file naming.")
+	parser.add_argument("-fa", "--fasta",			required=True,		type=str,	help=f"Path to reference FASTA file.")
+	parser.add_argument("-s",  "--sample-list",		required=True,		type=str,	help=f"Path to file containing sample FASTQ paths.")
+	parser.add_argument("-o",  "--output-dir",		required=True,		type=str,	help=f"Path to output directory.")
+	parser.add_argument("-db", "--database",		default=None,		type=str,	help=f"Path to database VCF to use.")
+	parser.add_argument("-dn", "--database-name",	default=None,		type=str,	help=f"Name of database for output file naming.")
+	parser.add_argument("-t",  "--threads",			default=1,			type=int,	help=f"Number of CPU threads to use [1].")
+	parser.add_argument("-sl", "--softlink",		action="store_true",			help=f"Create softlinks instead of copying source input files into output directory.")
+	args = parser.parse_args()
+
+	main(
+		species_name = args.species,
+		src_fasta_path = args.fasta,
+		sample_paths_file = args.sample_list,
+		output_dir_path = args.output_dir,
+		src_database_path = args.database,
+		db_name = args.database_name,
+		n_thread = args.threads,
+		softlink = args.softlink
+	)
