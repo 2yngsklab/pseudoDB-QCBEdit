@@ -15,28 +15,31 @@ def put_file(src, dest, softlink = False):
 	- dest: Path to destination
 	- softlink: Create softlink if true. Otherwise, copy the file.
 	"""
-	if os.path.abspath(src) == os.path.abspath(dest):
-		print(f"Source and destination are the same file: {src}, {dest}. Skipping.")
+	src_abspath = os.path.abspath(src)
+	dest_abspath = os.path.abspath(dest)
+
+	if src_abspath == dest_abspath:
+		print(f"Source and destination are the same file: {src_abspath}, {dest_abspath}. Skipping.")
 		return
 	
 	if softlink:
 		try:
-			os.symlink(src, dest)
+			os.symlink(src_abspath, dest_abspath)
 		except FileExistsError:
-			print(f"Symlink or file already exists: {dest}. Skipping.")
+			print(f"Symlink or file already exists: {dest_abspath}. Skipping.")
 		except Exception as e:
 			print(f"Failed to create symlink: {e}")
 			print(f"Attempting to copy file instead...")
-			return put_file(src, dest, softlink = False)
+			return put_file(src_abspath, dest_abspath, softlink = False)
 		else:
-			print(f"Created symlink: {dest} -> {src}")
+			print(f"Created symlink: {dest_abspath} -> {src_abspath}")
 	else:
 		try:
-			shutil.copy2(src, dest)
+			shutil.copy2(src_abspath, dest_abspath)
 		except Exception as e:
-			raise type(e)(f"Failed to copy file {src} to {dest}: {e}") from e
+			raise type(e)(f"Failed to copy file {src_abspath} to {dest_abspath}: {e}") from e
 		else:
-			print(f"Copied file {dest} from {src}")
+			print(f"Copied file {dest_abspath} from {src_abspath}")
 
 def process_sample_list(sample_paths_file):
 	"""
@@ -193,17 +196,13 @@ def pre_align(fasta_path):
 		os.remove(fasta_dict_path)
 
 	# 2. bwa-mem2 index
-	subprocess.run(["bwa-mem2", "index", fasta_path], check=True)
+	subprocess.run(f"bwa-mem2 index {fasta_path}", shell=True, check=True)
 
 	# 3. samtools faidx
-	subprocess.run(["samtools", "faidx", fasta_path], check=True)
+	subprocess.run(f"samtools faidx {fasta_path}", shell=True, check=True)
 
 	# 4. picard CreateSequenceDictionary
-	subprocess.run([
-		"picard", "CreateSequenceDictionary",
-		f"R={fasta_path}",
-		f"O={fasta_dict_path}"
-	], check=True)
+	subprocess.run(f"picard CreateSequenceDictionary R={fasta_path} O={fasta_dict_path}", shell=True, check=True)
 
 	print("Reference preprocessing completed successfully.")
 
@@ -235,18 +234,14 @@ def align_fastq(sample_dict, fasta_path, output_dir_path, n_thread):
 		sorted_sam_path = os.path.join(module_align_dir, f'{sample_name}_sorted.sam')
 		aligned_bam_path = os.path.join(module_align_dir, f'{sample_name}_aligned.bam')
 		metrics_txt_path = os.path.join(module_align_dir, f'{sample_name}_metrics.txt')
-
-		cmd_align=(f"bwa-mem2 mem -M -t {n_thread} -R '{rg_header}' {fasta_path} {r1} {r2} > {init_sam_path}") 
-		subprocess.run(cmd_align, shell=True, check=True)
+ 
+		subprocess.run(f"bwa-mem2 mem -M -t {n_thread} -R '{rg_header}' {fasta_path} {r1} {r2} > {init_sam_path}", shell=True, check=True)
 
 		# Mark Duplicate and Sort
 		os.makedirs(tmp_dir, exist_ok = True)
-		subprocess.run(["picard","SortSam",f"I={init_sam_path}", f"TMP_DIR={tmp_dir}", \
-				f"O={sorted_sam_path}", "SORT_ORDER=coordinate"],check=True)
+		subprocess.run(f"picard SortSam I={init_sam_path} TMP_DIR={tmp_dir} O={sorted_sam_path} SORT_ORDER=coordinate", shell=True, check=True)
 	
-		subprocess.run(["picard","MarkDuplicates", f"I={sorted_sam_path}", \
-				f"O={aligned_bam_path}", \
-				f"M={metrics_txt_path}","MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000","CREATE_INDEX=true"],check=True)
+		subprocess.run(f"picard MarkDuplicates I={sorted_sam_path} O={aligned_bam_path} M={metrics_txt_path} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 CREATE_INDEX=true", shell=True, check=True)
 		
 		if os.path.exists(init_sam_path):
 			os.remove(init_sam_path)
@@ -295,8 +290,7 @@ def pseudo_db(species_name, sample_list, fasta_path, output_dir_path):
 	
 	# UnifiedGenotyper caller
 	print(f"Start creating a pseudoDB with {len(sample_list_strs)} samples")
-	vcf_cmd = f"gatk -T UnifiedGenotyper -R {fasta_path} {' '.join(sample_list_strs)} -o {output_vcf_path} --genotype_likelihoods_model BOTH"
-	subprocess.run(vcf_cmd, shell=True, check=True)
+	subprocess.run(f"gatk -T UnifiedGenotyper -R {fasta_path} {' '.join(sample_list_strs)} -o {output_vcf_path} --genotype_likelihoods_model BOTH", shell=True, check=True)
 
 	return output_vcf_path
 
@@ -378,8 +372,7 @@ def variant_call(species_name, sample_list, fasta_path, db_name, output_dir_path
 	output_vcf = os.path.join(module_variants_dir, f"{species_name}_{db_name}_variant_calling.vcf.gz")
 
 	print(f"Start genetic variants calling with {len(sample_list_strs)} samples")
-	vcf_cmd = f"gatk -T UnifiedGenotyper -R {fasta_path} {' '.join(sample_list_strs)} -o {output_vcf} --genotype_likelihoods_model BOTH &> {output_vcf}.log"
-	subprocess.run(vcf_cmd, shell=True, check=True)
+	subprocess.run(f"gatk -T UnifiedGenotyper -R {fasta_path} {' '.join(sample_list_strs)} -o {output_vcf} --genotype_likelihoods_model BOTH &> {output_vcf}.log", shell=True, check=True)
 	
 	# delete file
 	os.remove(f"{output_vcf}.log")
