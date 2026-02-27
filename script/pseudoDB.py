@@ -94,6 +94,15 @@ def process_sample_list(sample_paths_file):
 
 	return sample_dict
 
+def build_vcf_index(vcf_path):
+	"""
+	Generate index file for VCF file.
+
+	Arguments:
+	- vcf_path: Path to VCF file to index.
+	"""
+	subprocess.run(f"tabix -p vcf {vcf_path}", shell=True, check=True)
+
 def set_wd(output_dir_path, sample_paths_file, src_fasta_path, src_database_path = None, softlink = False):
 	"""
 	Set output directory of the following structure:
@@ -139,6 +148,15 @@ def set_wd(output_dir_path, sample_paths_file, src_fasta_path, src_database_path
 	if src_database_path is not None:
 		db_path = os.path.join(output_dir_path, "data", "db", os.path.basename(src_database_path))
 		put_file(src_database_path, db_path, softlink = softlink)
+
+		# Generate VCF index if needed
+		indexed = False
+		for src_database_index_ext in [".idx", ".tbi"]:
+			if os.path.exists(f"{src_database_path}{src_database_index_ext}"):
+				put_file(f"{src_database_path}{src_database_index_ext}", f"{db_path}{src_database_index_ext}", softlink = softlink)
+				indexed = True
+		if not indexed:
+			build_vcf_index(db_path)
 
 	src_sample_dict = process_sample_list(sample_paths_file)
 	sample_dict = {}
