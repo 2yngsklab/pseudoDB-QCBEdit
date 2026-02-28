@@ -47,6 +47,12 @@ conda activate gatk3  # Default conda environment name
 conda activate <ENV_NAME>
 ```
 
+To test the installation, run `./run_examples.sh`.
+
+```bash
+./run_examples.sh
+```
+
 ## Usage
 
 ```bash
@@ -67,40 +73,37 @@ pseudoDB --species SPECIES --fasta FASTA --sample-list SAMPLE_LIST -output-dir O
 - `-t`, `--threads` — Number of CPU threads passed to `bwa-mem2 mem` (default: `1`)
 - `-sl`, `--softlink` — If set, input files are softlinked into the output directory instead of copied
 
-## Examples
+## Examples (taken from `run_examples.sh`)
 
 **Construct a pseudo-database:**
 ```bash
-/usr/bin/time --verbose pseudoDB \
-  --species human_chr12 \
-  --fasta ./human/chr12.fa \
-  --sample-list ./human/sample_list_chr12.txt \
-  -output-dir ./human_chr12_case1 \
-  > ./human_chr12_case1.log 2>&1
+pseudoDB \
+  --species human_chr22 \
+  --fasta ./example_data/chr22.fa \
+  --sample-list ./example_data/sample_list_chr22.txt \
+  --output-dir ./example_out/human_chr22_case1
 ```
 
 **Variant calling with dbSNP:**
 ```bash
-/usr/bin/time --verbose pseudoDB \
-  --species human_chr12 \
-  --fasta ./human/chr12.fa \
-  --sample-list ./human/sample_list_chr12.txt \
-  -output-dir ./human_chr12_case2 \
-  --database ./human/chr12_dbSNP.vcf.gz \
-  --database-name dbSNP \
-  > ./human_chr12_case2.log 2>&1
+pseudoDB \
+  --species human_chr22 \
+  --fasta ./example_data/chr22.fa \
+  --sample-list ./example_data/sample_list_chr22.txt \
+  --output-dir ./example_out/human_chr22_case2 \
+  --database ./example_data/chr22_dbSNP.vcf.gz \
+  --database-name dbSNP
 ```
 
 **Variant calling with a previously generated pseudoDB:**
 ```bash
-/usr/bin/time --verbose pseudoDB \
-  --species human_chr12 \
-  --fasta ./human/chr12.fa \
-  --sample-list ./human/sample_list_chr12.txt \
-  -output-dir ./human_chr12_case3 \
-  --database ./human/chr12_pseudoDB.vcf.gz \
-  --database-name pseudoDB \
-  > ./human_chr12_case3.log 2>&1
+pseudoDB \
+  --species human_chr22 \
+  --fasta ./example_data/chr22.fa \
+  --sample-list ./example_data/sample_list_chr22.txt \
+  --output-dir ./example_out/human_chr22_case3 \
+  --database ./example_data/chr22_pseudoDB.vcf.gz \
+  --database-name pseudoDB
 ```
 
 ## Sample List File Format
