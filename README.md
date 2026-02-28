@@ -13,7 +13,7 @@ To facilitate ease of use and verification, this repository includes :
 
 ### Contact
 For inquiries regarding analytical methods, results, or technical support, please contact:
--	**HyeonJung Lee**(hyeon@kaist.ac.kr)    
+-	**HyeonJung Lee** (hyeon@kaist.ac.kr)    
 *Korea Advanced Institute of Science and Technology (KAIST)*
 -	**Dr. Sunhee Kim** (king@kongju.ac.kr)    
 *Kongju National University, South Korea*
@@ -56,7 +56,7 @@ To test the installation, run `./run_examples.sh`.
 ## Usage
 
 ```bash
-pseudoDB --species SPECIES --fasta FASTA --sample-list SAMPLE_LIST -output-dir OUTPUT_DIR [--database DATABASE] [--database-name DATABASE_NAME] [--threads THREADS] [--softlink]
+pseudoDB --species <SPECIES> --fasta <FASTA> --sample-list <SAMPLE_LIST> -output-dir <OUTPUT_DIR> [--database <DATABASE>] [--database-name <DATABASE_NAME>] [--threads <THREADS>] [--softlink]
 ```
 
 ### Required Arguments
@@ -111,11 +111,11 @@ pseudoDB \
 The file passed to `-s` must contain accessible paths to paired-end FASTQ files, one per line. Files must follow the naming pattern:
 
 ```
-<sample_name>_1.<ext>
-<sample_name>_2.<ext>
+<SAMPLE_NAME>_1.<EXT>
+<SAMPLE_NAME>_2.<EXT>
 ```
 
-Where `<ext>` is one of: `.fastq`, `.fq`, `.fastq.gz`, `.fq.gz`.
+Where `<EXT>` is one of: `.fastq`, `.fq`, `.fastq.gz`, `.fq.gz`.
 
 Both R1 and R2 files must be present for every sample. The pipeline will raise an error if any pair is incomplete.
 
@@ -156,12 +156,12 @@ output_dir/
 
 All output files are named using `<species_name>` (from `-sp`) and `<db_name>` (from `-dn` or derived from `-db`).
 
-- Aligned BAM: `module/align/<sample>_aligned.bam`
-- Recalibrated BAM: `module/machine/<sample>_<db_name>_recalibrated.bam`
-- Variant call VCF: `module/variants/<species>_<db_name>_variant_calling.vcf.gz`
-- Error rate file: `module/error/<sample>_<db_name>_erate`
-- Quality score file: `module/model/<sample>_<db_name>_qs`
-- PseudoDB VCF: `data/db/<species>_pseudoDB.vcf.gz`
+- Aligned BAM: `module/align/<SAMPLE_NAME>_aligned.bam`
+- Recalibrated BAM: `module/machine/<SAMPLE_NAME>_<DB_NAME>_recalibrated.bam`
+- Variant call VCF: `module/variants/<SPECIES>_<DB_NAME>_variant_calling.vcf.gz`
+- Error rate file: `module/error/<SAMPLE_NAME>_<DB_NAME>_erate`
+- Quality score file: `module/model/<SAMPLE_NAME>_<DB_NAME>_qs`
+- PseudoDB VCF: `data/db/<SPECIES>_pseudoDB.vcf.gz`
 
 ## Softlinking (`-sl`)
 
@@ -177,8 +177,8 @@ By default, all input files (FASTA, database VCF, FASTQ files) are **copied** in
 The pipeline is designed to be safely re-run on a partially completed output directory:
 
 - **Reference indexing**: skipped if all index files already exist.
-- **Alignment**: per-sample, skipped if `<sample>_aligned.bam` already exists in `module/align/`.
-- **Base recalibration**: per-sample, skipped if `<sample>_<db_name>_recalibrated.bam` already exists in `module/machine/`.
+- **Alignment**: per-sample, skipped if `<SAMPLE_NAME>_aligned.bam` already exists in `module/align/`.
+- **Base recalibration**: per-sample, skipped if `<SAMPLE_NAME>_<DB_NAME>_recalibrated.bam` already exists in `module/machine/`.
 - **Variant calling** and **error rate**: not resumable at the per-sample level — will re-run in full if called.
 
 ## Threading
