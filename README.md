@@ -55,9 +55,14 @@ The wall-clock runtime for a typical complete run starting from FASTQ files (e.g
 
 ### Conda
 
-Run `./install.sh` to prepare the conda environment and install the pseudoDB script. 
+Clone the repository and `cd` into the main `pseudoDB` directory.
 
-The installation directory and conda environment name can be customized with `--install-dir` and `--env-name`.
+```bash
+git clone https://github.com/infoLab204/pseudoDB.git
+cd pseudoDB
+```
+
+From inside the main `pseudoDB` directory, run `./install.sh` to prepare the conda environment and install the pseudoDB script. The installation directory and conda environment name can be customized with `--install-dir` and `--env-name`.
 
 ```bash
 # Default installation:
@@ -76,7 +81,7 @@ conda activate gatk3  # Default conda environment name
 conda activate <ENV_NAME>
 ```
 
-To test the installation, run `./run_examples.sh`.
+To test the installation, run `./run_examples.sh` from inside the main `pseudoDB` directory.
 
 ```bash
 ./run_examples.sh
@@ -86,13 +91,13 @@ To test the installation, run `./run_examples.sh`.
 
 Alternatively, you can also run pseudoDB via Docker. It still uses Conda to install and manage packages, but this approach minimizes dependency conflicts with your host system.
 
-To build the Docker image, run:
+To build the Docker image, run the command below from inside the main `pseudoDB` directory.
 
 ```bash
 docker build -t pseudodb:latest .
 ```
 
-To test the installation, run `./run_examples_docker.sh`
+To test the installation, run `./run_examples_docker.sh` from inside the main `pseudoDB` directory.
 
 ```bash
 ./run_examples_docker.sh
